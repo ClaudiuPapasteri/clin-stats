@@ -1,0 +1,27 @@
+Provider: American Psychological Association
+Database: PsycINFO
+Content: application/x-research-info-systems
+
+TY  - JOUR
+ID  - 2000-05698-003
+T1  - Design specification issues in time-series intervention models.
+JF  - Educational and Psychological Measurement
+A1  - Huitema, Bradley E.
+A1  - McKean, Joseph W.
+VL  - 60
+SP  - 38
+EP  - 58
+Y1  - 2000
+CY  - US
+PB  - Sage Publications
+SN  - 1552-3888(Electronic),0013-1644(Print)
+N2  - Presents examples of errors of interpretation in the details of the recommended design matrices to be used in estimation of the four parameters used in the two-phase version of the interrupted time-series design. The authors assert that a number of writers incorrectly imply that different methods of specifying the four-parameter design all lead to the same conclusions despite the fact that the tests and estimates for level changes are dramatically different under various seemingly equivalent design specifications. Recommendations regarding the correct specification of the design matrix which hold whether the model is estimated using ordinary least squares (for the case of approximately independent errors) or some more complex time-series approach (for the case of autocorrelated errors) are made. (PsycINFO Database Record (c) 2016 APA, all rights reserved)
+KW  - *Error Analysis
+KW  - *Statistical Analysis
+KW  - *Test Construction
+KW  - *Test Forms
+KW  - *Testing
+KW  - Time Series
+M3  - doi:10.1177/00131640021970358
+DO  - 10.1177/00131640021970358
+ER  -

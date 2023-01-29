@@ -1,0 +1,19 @@
+Provider: American Psychological Association
+Database: PsycINFO
+Content: application/x-research-info-systems
+
+TY  - JOUR
+ID  - 1983-31741-001
+T1  - Three methods for analyzing limited time-series (N of 1) data.
+JF  - Behavioral Assessment
+A1  - Gorsuch, Richard L.
+VL  - 5
+SP  - 141
+EP  - 154
+Y1  - 1983
+CY  - US
+PB  - Pergamon Press, Inc.
+SN  - 0191-5401(Print)
+N2  - Compares generalized least squares procedures for autocorrelated situations. Time-series analyses are often desirable for N of 1 designs, but autocorrelation may invalidate the ordinary least squares statistical procedures. Trend analysis, use of an autocorrelation as an estimate of the autoregressive parameter, and first differencing are 3 generalized least squares procedures that may be considered for this situation. Appropriate use of these procedures is explored along with use of the Durbin-Watson statistic. Trend analysis appears to be the most useful, with first differencing being too insensitive for simple AB designs. (23 ref) (PsycINFO Database Record (c) 2016 APA, all rights reserved)
+KW  - Statistical Analysis
+ER  -

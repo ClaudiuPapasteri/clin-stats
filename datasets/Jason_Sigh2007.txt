@@ -1,0 +1,17 @@
+phase	score
+A	3
+A	4
+A	3
+B	3
+B	1
+B	0
+B	1
+B	0
+B	0
+B	0
+B	0
+B	0
+B	0
+B	0
+B	0
+B	0

@@ -1,0 +1,1508 @@
+---
+title: "Regresia segmentată și cauzalitatea"
+author: "Claudiu Papasteri"
+subtitle: "De la observație la inferenă cauzală" 
+editor: source
+execute:
+  eval: true
+  echo: true
+  warning: true
+  error: true   
+format:
+  revealjs:
+    code-copy: hover
+    code-overflow: scroll
+    multiplex: false
+    embed-resources: false
+    controls: auto
+    progress: true
+    history: true
+    hash-type: number    
+    slide-number: c/t
+    show-slide-number: print  
+    menu:
+      side: right
+      width: normal
+      numbers: true
+    chalkboard:
+      theme: chalkboard
+    #   src: drawings.json
+      read-only: false
+title-slide-attributes:
+  # background-iframe: grid-worms/index.html
+  data-background-image: img/logo.png
+  data-background-opacity: "0.5"
+  data-background-size: 15%
+  data-background-position: 2% 2%
+preload-iframes: true
+bibliography: references.bib
+csl: apa.csl         # https://github.com/citation-style-language/styles/blob/master/apa.csl
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+# General R options
+set.seed(111)               # in case we use randomized procedures       
+options(scipen = 999)       # positive values bias towards fixed and negative towards scientific notation
+options(repos = 
+  c(getOption("repos")["CRAN"],
+  CRANextra = "https://mirror.clientvps.com/CRAN/")
+) # use CRAN as default, set CRANextra to Nürnberg mirror
+
+# Load packages
+if (!require("pacman")) install.packages("pacman", dependencies = TRUE)
+packages <- c(
+  "here", "fs",
+  "conflicted", "tidyverse", "scales",
+  "rio",
+  "papaja", "psych",
+  # , ...
+  "plotly", "crosstalk", "DT", "htmltools",
+  "osfr", "lspline",
+  "scda", "scan"
+)
+pacman::p_load(char = packages)
+
+# Set here to directory
+here::set_here()
+unloadNamespace("here")                   # need new R session or unload namespace for .here file to take precedence over .Rproj
+notebook_name <- fs::path_file(here::here())
+
+# Solve conflicts in favor of tidyverse
+conflicted::conflict_prefer("filter", winner = "dplyr")
+conflicted::conflict_prefer("select", winner = "dplyr")
+conflicted::conflict_prefer("slice", winner = "dplyr")
+conflicted::conflict_prefer("rename", winner = "dplyr")
+conflicted::conflict_prefer("count", winner = "dplyr")
+conflicted::conflict_prefer("layout", "plotly")
+
+# Themes for ggplot2 plotting (here used APA style)
+theme_set(papaja::theme_apa())
+```
+
+## Prezentarea
+
+::: columns
+::: {.column width="70%"}
+Urmăriți prezentarea pe:
+
+<https://quarto.org/docs/presentations/>
+
+sau scanând codul
+
+<br/> {{< qrcode https://claudiupapasteri.github.io/clin-stats/pwr.html#/ width=300 height=300 colorDark='#0011bb' >}}
+:::
+
+::: {.column width="30%"}
+Download: <i class="fas fa-file-pdf"></i> <a href="/res/pwr.pdf" download>Prezentarea pdf</a> <i class="fas fa-github"></i> <a href="https://github.com/ClaudiuPapasteri/clin-stats/" download>Codul din Github</a>
+:::
+:::
+
+## Un pattern fără context (1) {.scrollable}
+
+```{r}
+#| label: pattern1
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+#| warning: false
+#| message: false
+#| output: false
+
+# Packages and settings
+packs <- c("ggplot2", "papaja")
+success <- suppressWarnings(sapply(packs, require, character.only = TRUE))
+install.packages(names(success)[!success])
+sapply(names(success)[!success], require, character.only = TRUE)
+
+theme_set(papaja::theme_apa())  # set APA style theme for plots
+
+# Get data from package
+if(!require(MultiKink)){install.packages("MultiKink")}; library(MultiKink)
+data <- MultiKink::triceps
+data <- subset(data, age <= 30)
+
+# Plot the data
+plot <- ggplot(data, aes(x = age, y = triceps)) +
+  geom_point(alpha = .7, fill = "black", color = "grey50") + 
+  xlab("Vârstă") +
+  ylab("TSF")
+```
+
+Investigați codul:
+
+::: incremental
+-   Pachete & Setări
+-   Datele provin dintr-un pachet
+-   Se generează un grafic
+:::
+
+## Un pattern fără context (2) {.smaller}
+
+Ce vedeți?
+
+Cum am putea modela?
+
+```{r}
+#| label: pattern2
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+#| warning: false
+#| message: false
+
+plot
+```
+
+## Un pattern fără context (3) {.scrollable .smaller}
+
+Ce reprezintă linia? Este pattern-ul descris bine de o relație liniară?
+
+```{r}
+#| label: pattern3
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+#| warning: false
+#| message: false
+
+# Linear Regression
+# plot + geom_smooth(formula = y ~ x, method = "lm", se = TRUE, color = "red") # fast way to plot it
+lm_lin <- lm(triceps ~ age, data = data)   # fit regression model and then plot it
+pred_lin <- predict(lm_lin, se.fit = TRUE, data = data) 
+
+plot_lin <- 
+  plot +
+  geom_line(aes(y = pred_lin$fit), size = 1, color = "red") +
+  geom_ribbon(aes(ymax = pred_lin$fit + pred_lin$se.fit, ymin = pred_lin$fit - pred_lin$se.fit), 
+              fill = "red", alpha = .3) +
+  geom_text(x = 5, y = 35, color = "red", 
+            label = latex2exp::TeX(paste0("$\\R^2 = $", round(summary(lm_lin)$r.squared, 3))))
+
+suppressWarnings(print(plot_lin))
+```
+
+## Un pattern fără context (4) {.scrollable .smaller}
+
+Este patternul mai bine descris de o relație curbilinie (polinomială)? Care dintre trenduri, pătratic ([roșu]{style="color:red;"}) sau cubic ([albastru]{style="color:blue;"}) se potrivește mai bine datelor?
+
+```{r}
+#| label: pattern4
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+#| warning: false
+#| message: false
+
+# Polynomial Regression
+lm_quad <- lm(triceps ~ age + I(age^2), data = data)
+lm_cub <- lm(triceps ~ age + I(age^2) + I(age^3), data = data)
+
+pred_quad <- predict(lm_quad, se.fit = TRUE, data = data) 
+pred_cub <- predict(lm_cub, se.fit = TRUE, data = data) 
+
+plot_poly <-
+  plot +
+  geom_line(aes(y = pred_quad$fit), size = 1, color = "blue") +
+  geom_ribbon(aes(ymax = pred_quad$fit + pred_quad$se.fit, ymin = pred_quad$fit - pred_quad$se.fit), 
+              fill = "blue", alpha = .1) +
+  geom_text(x = 5, y = 35, color = "blue", 
+            label = latex2exp::TeX(paste0("$\\R^2 = $", round(summary(lm_quad)$r.squared, 3)))) +
+  geom_line(aes(y = pred_cub$fit), size = 1, color = "red") +
+  geom_ribbon(aes(ymax = pred_cub$fit + pred_cub$se.fit, ymin = pred_cub$fit - pred_cub$se.fit), 
+              fill = "red", alpha = .1) +
+  geom_text(x = 5, y = 30, color = "red", 
+            label = latex2exp::TeX(paste0("$\\R^2 = $", round(summary(lm_cub)$r.squared, 3))))
+
+suppressWarnings(print(plot_poly))
+```
+
+## Un pattern fără context (5) {.smaller}
+
+**Reinventăm regresia segmentată!**
+
+::: incremental
+1.  Împățim datele în grupe de vârstă (segmentăm variabila $x$).
+
+2.  Potrivim regresii liniare pe fiecare set de date rezultat.
+:::
+
+```{r}
+#| label: pattern5
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+#| warning: false
+#| message: false
+
+plot
+```
+
+## Un pattern fără context (6)
+
+**Reinventăm regresia segmentată!**
+
+$$
+y = \beta_{0} + \beta_{1}x + \epsilon  \;\;\;\; pentru \;\;\;\; x \leq k_{1}  
+\\
+y = \beta_{0} + \beta_{1}x + \epsilon  \;\;\;\; pentru \;\;\;\; k_{1} < x \leq k_{2}
+\\
+...
+\\
+y = \beta_{0} + \beta_{1}x + \epsilon  \;\;\;\; pentru \;\;\;\; x \geq k_{p}  
+\\
+$$
+
+Denumim $k$ punctul de întrerupere (nod).
+
+Rezultă $p$ segmente.
+
+## Un pattern fără context (7) {.scrollable}
+
+Reinventăm regresia segmentată, **în cod!**
+
+```{r}
+#| label: pattern7
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+#| warning: false
+#| message: false
+
+# Piecewise regression
+data_k1 <- data[data$age < 5, ]
+data_k2 <- data[data$age >= 5 & data$age < 10, ]
+data_k3 <- data[data$age >= 10 & data$age < 20, ]   
+data_k4 <- data[data$age >= 20, ]
+  
+lm_p1 <- lm(triceps ~ age, data = data_k1)
+lm_p2 <- lm(triceps ~ age, data = data_k2)
+lm_p3 <- lm(triceps ~ age, data = data_k3)
+lm_p4 <- lm(triceps ~ age, data = data_k4)
+
+pred_p1 <- predict(lm_p1, se.fit = TRUE, data = data_k1)
+pred_p2 <- predict(lm_p2, se.fit = TRUE, data = data_k2)
+pred_p3 <- predict(lm_p3, se.fit = TRUE, data = data_k3)
+pred_p4 <- predict(lm_p4, se.fit = TRUE, data = data_k4)
+
+plot_pwr <- 
+  plot + 
+  geom_line(data = data_k1, aes(y = pred_p1$fit), size = 1, color = "red") +
+  geom_ribbon(data = data_k1, aes(ymax = pred_p1$fit + pred_p1$se.fit, ymin = pred_p1$fit - pred_p1$se.fit),
+              fill = "red", alpha = .1) + 
+  geom_line(data = data_k2, aes(y = pred_p2$fit), size = 1, color = "red") +
+  geom_ribbon(data = data_k2, aes(ymax = pred_p2$fit + pred_p2$se.fit, ymin = pred_p2$fit - pred_p2$se.fit),
+              fill = "red", alpha = .1) +
+  geom_line(data = data_k3, aes(y = pred_p3$fit), size = 1, color = "red") +
+  geom_ribbon(data = data_k3, aes(ymax = pred_p3$fit + pred_p3$se.fit, ymin = pred_p3$fit - pred_p3$se.fit),
+              fill = "red", alpha = .1) +
+  geom_line(data = data_k4, aes(y = pred_p4$fit), size = 1, color = "red") +
+  geom_ribbon(data = data_k4, aes(ymax = pred_p4$fit + pred_p4$se.fit, ymin = pred_p4$fit - pred_p4$se.fit),
+              fill = "red", alpha = .1)  
+
+suppressWarnings(print(plot_pwr))
+```
+
+## Un pattern fără context (8)
+
+Reinventăm regresia segmentată, **în cod!**
+
+Ce observați despre segmentele din Regresia Segmentată?
+
+```{r}
+#| label: pattern8
+#| echo: false
+#| warning: false
+#| message: false
+
+suppressWarnings(print(plot_pwr))
+```
+
+## Un pattern fără context (9) {.smaller}
+
+[De fapt, ceea ce este denumit în litarură Regresie Segmentată nu este Regresie Segmentată, ci Regresie cu Spline-uri Liniare.]{style="color:red;"}
+
+Spline-urile permit o interpolare netedă și continuă între punctele de întrerupere (noduri). Între noduri este calculată o regresie (*polinomială*).
+
+```{r}
+#| label: pattern9
+#| echo: false
+#| warning: false
+#| message: false
+
+suppressWarnings(print(plot_pwr))
+```
+
+## Un pattern fără context (10)
+
+::: r-fit-text
+**Re-reinventăm regresia segmentată!**
+
+::: incremental
+1.  Împățim datele în grupe de vârstă (segmentăm variabila $x$) =\> $k$ noduri.
+
+2.  Folosim o funcție treaptă încât să obținem o singură ecuație de regresie care păstrează doar un intercept $\beta_{0}$ și câte o pantă pentru fiecare set de date rezultat.
+:::
+
+::: fragment
+$$
+y = \beta_{0} + \beta_{1}x + \beta_{2}(x - k_{1}) + \beta_{3}(x - k_{2}) + ... + \beta_{p-1}(x - k_{p}) + \epsilon
+\\
+\begin{equation}
+Unde \;\;\;\; 
+  (x - k)_{+} = \begin{cases}
+    0 \;\;\;\;\;\;\;\;\; dacă \; x < k \\
+    x - k \;\;\; dacă \; x \geq k \\
+\end{cases}       
+\end{equation}
+$$
+
+Denumim $k$ punctul de întrerupere (nod).
+
+Rezultă $p$ segmente.
+:::
+:::
+
+## Un pattern fără context (11)
+
+Re-reinventăm regresia segmentată, **în cod!**
+
+```{r}
+#| label: pattern11
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+#| warning: false
+#| message: false
+
+# Linear splines
+# Add the terms (x − k) when x ≥ k . 
+# We will do this by adding I ((age − k)∗(age >= k)) terms to the linear model. 
+# Note that (age >= k) is a logical statement that will be 0 (FALSE) or 1 (TRUE) and I() evaluates that all expression.
+lm_linsp <- lm(triceps ~ age + 
+                 I((age - 5) * (age >= 5)) +
+                 I((age - 10) * (age >= 10)) +
+                 I((age - 20) * (age >= 20)),
+               data = data)
+pred_linsp <- predict(lm_linsp, se.fit = TRUE, data = data)
+
+plot_linsp <-                  
+  plot +
+  geom_line(data = data, aes(y = pred_linsp$fit, x = age), size = 1, col = "red") +
+  geom_ribbon(data = data, aes(ymax = pred_linsp$fit + pred_linsp$se.fit, ymin = pred_linsp$fit - pred_linsp$se.fit), 
+              fill = "red", alpha = .1) +
+  geom_text(x = 5, y = 35, color = "red", 
+            label = latex2exp::TeX(paste0("$\\R^2 = $", round(summary(lm_linsp)$r.squared, 3))))
+
+suppressWarnings(print(plot_linsp))
+```
+
+## Un pattern fără context (12) {.scrollable .smaller}
+
+**Bonus**: Mai sus scria că regresiile între noduri sunt *polinomiale*, iar polinomul, poate desigur să nu fie de ordinul I.
+
+Optimizânt numărul $k$ de noduri și ordinul polinomului obținem o metodă foarte robustă, deși nesofisticată, de învățare a pattern-urilor din date. Un exemplu de Regresie cu Spline-uri Polinomiale de ordin II:
+
+```{r}
+#| label: pattern12
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+#| warning: false
+#| message: false
+
+# Quadratic splines
+lm_quadsp <- lm(triceps ~ age + 
+                  I((age - 5) * (age >= 5)) + I((age - 5)^2 * (age >= 5)) + 
+                  I((age - 10) * (age >= 10)) + I((age - 10)^2 * (age >= 10)) + 
+                  I((age - 20) * (age >= 20)) + I((age - 20)^2 * (age >= 20)), 
+                data = data)
+
+pred_quadsp <- predict(lm_quadsp, se.fit = TRUE, data = data)
+
+plot_quadsp <-
+  plot +
+  geom_line(data = data, aes(y = pred_quadsp$fit, x = age), size = 1, col = "red") +
+  geom_ribbon(data = data, aes(ymax = pred_quadsp$fit + pred_quadsp$se.fit, ymin = pred_quadsp$fit - pred_quadsp$se.fit), 
+              fill = "red", alpha = .1) +
+  geom_text(x = 5, y = 35, color = "red", 
+            label = latex2exp::TeX(paste0("$\\R^2 = $", round(summary(lm_quadsp)$r.squared, 3))))
+
+suppressWarnings(print(plot_quadsp))
+```
+
+## Contextul datelor, elucidarea misterului
+
+::: r-fit-text
+Măsurăm constructe:
+
+-   **TSF** =grosimea pliului cutanat al tricepsului, o măsurătoare economică și convenabilă pentru a evalua obezitatea.
+
+    -   Validitate: avantaj față de alți indici are avantajul de a reprezenta distribuţia grăsimii.
+
+    -   Utilitate predictivă: la fiecare creștere cu 1 mm a grosimii TSF, riscul de deces scade cu 4%, riscul de deces din cauze cardiovasculare cu 6% [@li2022].
+
+**Vârsta** codează timpul în unități discrete dacă am presupune că indivizii sunt interșanjabili. Totuși multe variabile se asociază cu TSF (ex. genul, nutriția etc), iar imaginea transversală nu spune povestea filmului longitudinal.
+:::
+
+## Date longitudinale în Psihologie
+
+Deoarece cea mai mare parte a psihologiei implică așa-numite procese non-ergodice, cercetarea pe eșantion mari nu poate oferi informații fiabile despre procesele la nivel individual. [@hamaker2012].
+
+-   O descriere simplificata a non-ergotismului: individul, în timp, nu obține rezultatul mediu al grupului.
+
+Monitorizare în timp real al sistemelor idiografice
+
+-   Pentru o discuție a utilizării conceptului și complianței cu metodologia în contex psihoterapeutic vedeți [@schiepek2016].
+
+## Datele longitudinale
+
+::: columns
+::: {.column width="60%"}
+Datele disponibile de la [Journal of Open Psychology Data](https://openpsychologydata.metajnl.com/): [@heino2022]\
+
+-   Monitorizare dinamică cognitivă (test Stroop) după mindfulness
+-   Un singur individ peste 900 de zile, meditație zilnică de 20 minute
+:::
+
+::: {.column width="40%"}
+[Repozitoriu OSF](https://www.doi.org/10.17605/OSF.IO/W9V28) <br> Datele se găsesc și în Github-ul prezentării.
+:::
+:::
+
+## Lupta cu date longitudinale (1) {.scrollable}
+
+```{r}
+#| label: long1
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+#| warning: false
+#| message: false
+#| output: false
+
+# Packages and settings
+packs <- c("ggplot2", "papaja", "osfr", "tidyverse", "scales", "lspline", "plotly")
+success <- suppressWarnings(sapply(packs, require, character.only = TRUE))
+install.packages(names(success)[!success])
+sapply(names(success)[!success], require, character.only = TRUE)
+
+theme_set(papaja::theme_apa())  # set APA style theme for plots
+
+# Read data from folder -- here we will read directly from OSF repository
+# csv_name <- "cognitive_dynamics_heino.csv"
+# csv_path <- here::here("datasets", csv_name) 
+# df <- read.csv(csv_path)   
+
+# Read data from OSF repository
+repo_url <- "https://osf.io/w9v28/"
+csv_name <- "cognitive_dynamics_heino.csv"
+repo <- osfr::osf_retrieve_node(repo_url); Sys.sleep(10)
+repo_files <- osfr::osf_ls_files(repo)
+# we download to a temporary file that gets deleted after
+temp_dir <- tempdir()
+osfr::osf_download(repo_files[repo_files$name == csv_name, ], path = temp_dir); Sys.sleep(10)
+csv_path <- file.path(temp_dir, csv_name)
+df <- read.csv(csv_path)
+unlink(csv_path)   
+
+# Transform
+df_clean <- 
+  df %>%
+  # keep only days with record of date
+  tidyr::drop_na(date) %>%
+  # convert to ISO 8601 date format, format used is not consistent
+  tidyr::separate(date, into = c("day", "month", "year"), sep = "\\.", remove = FALSE) %>%
+  tidyr::separate(time_of_day, into = c("hour", "minute"), sep = "\\:", remove = FALSE) %>%
+  # there are some typos, exclude them
+  dplyr::mutate(across(c(day, month, year, hour, minute), as.numeric)) %>%
+  dplyr::filter(year >= 2014, year <= 2017, month < 12, day < 31) %>%
+  dplyr::mutate(
+    date = lubridate::ymd(paste(year, month, day, sep = ' ')),
+    date_posixct = as.POSIXct(date),
+    hm = lubridate::hm(paste(hour, minute, sep = ' '))
+  ) %>%
+  dplyr::filter(date > lubridate::as_date("2014-07-01")) %>%
+  dplyr::select(rowNumber, date, date_posixct, hm, stroop_incongruent_post_meditation) %>%
+  tidyr::drop_na(stroop_incongruent_post_meditation) %>%
+  dplyr::mutate(y = stroop_incongruent_post_meditation,
+                moments = dplyr::row_number())
+
+# Plot
+plot <- 
+  ggplot(df_clean, aes(x = date_posixct, y = y)) +
+  geom_point() +
+  scale_x_datetime(date_labels = "%Y-%m", breaks= scales::date_breaks("6 month")) +
+  xlab("") +
+  ylab("Timp răspuns Stroop inc. Post mindfulness") + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+```
+
+Investigați codul:
+
+::: incremental
+-   Pachete & Setări
+-   Datele sunt citite din repozitorul OSF
+-   Datele sunt curățate și transformate\
+-   Se generează un grafic
+:::
+
+## Lupta cu date longitudinale (2)
+
+Ce observați?
+
+```{r}
+#| label: long2
+#| echo: false
+#| warning: false
+#| message: false
+
+plot
+```
+
+## Regresia Liniară
+
+Putem modela mai bine?
+
+```{r}
+#| label: long3
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+#| warning: false
+#| message: false
+
+# Linear Regression
+lm_lin <- lm(y ~ date_posixct, data = df_clean)
+pred_lin <- predict(lm_lin, se.fit = TRUE, data = df_clean)
+
+plot_lin <-                  
+  plot +
+  geom_line(data = df_clean, aes(y = pred_lin$fit, x = date_posixct), size = 1, col = "blue") +
+  geom_ribbon(data = df_clean, aes(ymax = pred_lin$fit + pred_lin$se.fit, ymin = pred_lin$fit - pred_lin$se.fit), 
+              fill = "blue", alpha = .1) +
+  geom_text(x = as.POSIXct("2014-11-30"), y = 21, color = "blue", 
+            label = latex2exp::TeX(paste0("$\\R^2 = $", round(summary(lm_lin)$r.squared, 3))))
+
+suppressWarnings(print(plot_lin))
+```
+
+## Regresia segmentată {.scrollable .smaller}
+
+De această dată nu o vom mai coda "manual" (folosing doar *base R*), ci vom folosi pachetul `lspline` pentru a obține noduri în urma împățirii datelor în intervale egale de timp.
+
+```{r}
+#| label: long4
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+#| warning: false
+#| message: false
+#| output: false
+
+# Linear Splines
+# Instead of doing it manually, we will use `lspline` package
+# knots set manually lspline()
+# knots set at breaks dividing the range of x into q equal-frequency intervals qlspline()
+# knots set at breaks dividing the range of x into n equal-width intervals elspline()
+lm_linsp2 <- lm(y ~ lspline::qlspline(date_posixct, q = 2), data = df_clean)
+lm_linsp3 <- lm(y ~ lspline::qlspline(date_posixct, q = 3), data = df_clean)
+lm_linsp4 <- lm(y ~ lspline::qlspline(date_posixct, q = 4), data = df_clean)
+lm_linsp5 <- lm(y ~ lspline::qlspline(date_posixct, q = 5), data = df_clean)
+lm_linsp6 <- lm(y ~ lspline::qlspline(date_posixct, q = 6), data = df_clean)
+lm_linsp10 <- lm(y ~ lspline::qlspline(date_posixct, q = 10), data = df_clean)
+
+df_clean$knots2 <- predict(lm_linsp2, se.fit = TRUE, data = df_clean)$fit
+df_clean$knots3 <- predict(lm_linsp3, se.fit = TRUE, data = df_clean)$fit
+df_clean$knots4 <- predict(lm_linsp4, se.fit = TRUE, data = df_clean)$fit
+df_clean$knots5 <- predict(lm_linsp5, se.fit = TRUE, data = df_clean)$fit
+df_clean$knots6 <- predict(lm_linsp6, se.fit = TRUE, data = df_clean)$fit
+df_clean$knots10 <- predict(lm_linsp10, se.fit = TRUE, data = df_clean)$fit
+```
+
+## Interacționați cu datele {.smaller}
+
+Câte noduri să folosim?
+
+```{r}
+#| label: long5
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+#| warning: false
+#| message: false
+
+plot_interact <- 
+  plot_ly(data = df_clean, x = ~date_posixct) %>% 
+  add_markers(y = ~y, showlegend = FALSE, name = "") %>% 
+  add_lines(x = ~date_posixct, y = ~knots2, visible = "legendonly", name = "2 noduri") %>%
+  add_lines(x = ~date_posixct, y = ~knots3, visible = "legendonly", name = "3 noduri") %>%
+  add_lines(x = ~date_posixct, y = ~knots4, visible = "legendonly", name = "4 noduri") %>%
+  add_lines(x = ~date_posixct, y = ~knots5, visible = "legendonly", name = "5 noduri") %>%
+  add_lines(x = ~date_posixct, y = ~knots6, visible = "legendonly", name = "6 noduri") %>%
+  layout(
+    xaxis = list(
+      title = "", 
+      tickformat = "%Y-%m"
+  ))
+
+plot_interact
+```
+
+## Câte noduri?
+
+```{r}
+#| label: long6
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+#| warning: false
+#| message: false
+
+# Plot PWR with different number of knots
+plot_knots <- 
+  plot +
+  geom_line(data = df_clean, aes(y = knots5, x = date_posixct), alpha = .8, size = 1, color = "red1") +
+  geom_text(x = as.POSIXct("2014-11-30"), y = 21, color = "red1", 
+          label = latex2exp::TeX(paste0("$\\R^2 = $", round(summary(lm_linsp5)$r.squared, 3)))) + 
+  geom_line(data = df_clean, aes(y = knots6, x = date_posixct), alpha = .8, size = 1, color = "red3") +
+  geom_text(x = as.POSIXct("2014-11-30"), y = 19.5, color = "red3", 
+            label = latex2exp::TeX(paste0("$\\R^2 = $", round(summary(lm_linsp6)$r.squared, 3)))) +
+  geom_line(data = df_clean, aes(y = knots10, x = date_posixct), alpha = .8, size = 1, color = "blue") +
+  geom_text(x = as.POSIXct("2014-11-30"), y = 17.5, color = "blue", 
+            label = latex2exp::TeX(paste0("$\\R^2 = $", round(summary(lm_linsp10)$r.squared, 3))))
+
+suppressWarnings(print(plot_knots))
+```
+
+## Pe ce bazăm inferența
+
+Inferență bazată pe model <br> V.S. <br> Inferență bazată pe design
+
+## Cauzalitatea ([după Hume](https://plato.stanford.edu/entries/hume/))
+
+::: {layout-nrow="2"}
+![Cauza și efectul sunt interconectate](img/causal_1.png){width=200}
+
+![Cauza precede (temporal) efectul](img/causal_2.png){width=200}
+
+![Cauza și efectul covariază consistent](img/causal_3.png){width=200}
+
+![Nu există alte explicații alternative](img/causal_4.png){width=200}
+:::
+
+## Regresia segmentată și cauzalitatea (1)
+
+**Design-ul de Discontinuitate în Regresie (RDD)**
+
+::: incremental
+-   cvasi-experimental pre-post
+-   manipularea variabilei independente poate apărea natural în mediu =\> inferență cauzală din date observaționale
+-   NU vom discuta despre ea la acest curs, dar puteți [citiți mai multe](https://en.wikipedia.org/wiki/Regression_discontinuity_design)
+:::
+
+## Regresia segmentată și cauzalitatea (2)
+
+**Studiile Experimentale cu un Singur Caz (SCED)**
+
+::: incremental
+-   manipularea variabilei independente
+-   măsurători repetate
+-   calitatea dovezilor cauzale echivalentă cu cea din studii clinice randomizate (RCT)
+:::
+
+## Regresia segmentată în SCED
+
+## Istoria modelului
+
+   [![](img/modevo1_art.png){.fragment .grow}](https://doi.org/10.1177/002246698501900404)   
+
+::: aside
+[@center1985]
+:::
+
+## Istoria modelului pentru SCED
+
+::: r-fit-text
+::: columns
+::: {.column width="30%"}
+::: {.fragment .fade-in height="100%" width="auto"}
+::: {.fragment .grow}
+::: {.fragment .fade-out}
+  <br/>Model ANOVA   ![](img/modevo2_anova.png)
+:::
+:::
+:::
+:::
+
+::: {.column width="30%"}
+::: {.fragment .fade-in height="100%" width="auto"}
+::: {.fragment .grow}
+::: {.fragment .fade-out}
+  <br/>Model cu o pantă globală   ![](img/modevo3_overalslope.png)
+:::
+:::
+:::
+:::
+
+::: {.column width="40%"}
+::: {.fragment .fade-in height="100%" width="auto"}
+::: {.fragment .grow}
+::: {.fragment .fade-out}
+  <br/>Model regresie segmentată   ![](img/modevo4_pwr.png)
+:::
+:::
+:::
+:::
+:::
+:::
+
+## Istoria modelului în cod (1) {.scrollable}
+
+Codați cu mine pașii:
+
+::: incremental
+-   Pachete & Setări
+-   Date
+-   Calcul statistici pentru grafice
+:::
+
+```{r}
+#| label: hist1
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+#| warning: false
+#| message: false
+#| output: false
+
+# Packages and settings
+packs <- c("tidyverse", "papaja", "latex2exp", "cowplot")
+success <- suppressWarnings(sapply(packs, require, character.only = TRUE))
+install.packages(names(success)[!success])
+sapply(names(success)[!success], require, character.only = TRUE)
+
+if(!require(ggbrace)){devtools::install_github("nicolash2/ggbrace")}; library(ggbrace)
+
+theme_set(papaja::theme_apa())  # set APA style theme for plots
+
+
+# Data
+df <- tibble(
+  y = c(c(3, 4, 6, 5, 4), c(8, 7, 8, 9, 9)),
+  AB = c(rep("A", 5), rep("B", 5)), 
+  t = 1:10
+)
+
+# Stats
+df_A <- df[df$AB == "A", ]
+df_B <- df[df$AB == "B", ]  
+mean_A <- mean(df_A$y, na.rm = TRUE)
+mean_B <- mean(df_B$y, na.rm = TRUE)
+intercept_A <- summary(lm(y ~ t, data = df_A))$coefficients[1, 1]
+slope_A <- summary(lm(y ~ t, data = df_A))$coefficients[2, 1]
+intercept_B <- summary(lm(y ~ t, data = df_B))$coefficients[1, 1]
+slope_B <- summary(lm(y ~ t, data = df_B))$coefficients[2, 1]
+```
+
+## Istoria modelului în cod (2)
+
+Plotarea datelor, un schelet pentru restul graficelor.
+
+```{r}
+#| label: hist2
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+
+# Plot Skeleton
+plot_skeleton <- 
+  ggplot() +
+  geom_point(data = df, aes(x = t, y = y)) +
+  geom_rect(aes(xmin = 5.4, xmax = 5.6, ymin = 1, ymax = 10), 
+            fill = "black", alpha = 0.2) +
+  geom_line(data = df_A, aes(x = t, y = y)) +
+  geom_line(data = df_B, aes(x = t, y = y)) +
+  scale_x_continuous(breaks = 1:10, limits = c(1, 10)) +
+  scale_y_continuous(breaks = 1:10, limits = c(1, 10)) +
+  coord_equal()
+
+plot_skeleton
+```
+
+## Istoria modelului în cod (3)
+
+Mediile celor două faze.
+
+```{r}
+#| label: hist3
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+
+# Plot Means
+plot_skeleton +    
+  geom_segment(aes(x = 1, xend = 5.5, y = mean_A, yend = mean_A), 
+               color = "tan1") +
+  geom_segment(aes(x = 5.5, xend = 10, y = mean_B, yend = mean_B), 
+               color = "tan1")
+```
+
+## Istoria modelului în cod (4)
+
+Panta globală (peste datele din ambele faze).
+
+```{r}
+#| label: hist4
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+
+# Plot Global Slope
+plot_skeleton + 
+  stat_smooth(data = df, aes(x = t, y = y), geom = "line",
+              formula = y ~ x, method = "lm", se = FALSE, 
+              linetype = "longdash", size = 1, alpha = 0.6, 
+              color = "yellow4")
+```
+
+## Istoria modelului în cod (5)
+
+Pantele individuale ale celor două faze.
+
+```{r}
+#| label: hist5
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+
+# Plot Phase Slopes
+plot_skeleton +
+  stat_smooth(data = df_A, aes(x = t, y = y), geom = "line", 
+              formula = y ~ x, method = "lm", se = FALSE,
+              alpha = 0.7, size = 1, color = "yellow3") +
+  stat_smooth(data = df_B, aes(x = t, y = y), geom = "line",
+              formula = y ~ x, method = "lm", se = FALSE,
+              alpha = 0.7, size = 1, color = "yellow3")
+```
+
+## Istoria modelului în cod (6)
+
+Ce arată graficul?
+
+::: r-stack
+::: {.fragment .r-stretch}
+```{r}
+#| label: hist6_1
+#| echo: false
+#| warning: false
+#| message: false
+
+plot_skeleton +
+  geom_segment(aes(x = 1, xend = 5.5, y = mean_A, yend = mean_A), 
+               color = "tan1") +
+  geom_segment(aes(x = 5.5, xend = 10, y = mean_B, yend = mean_B), 
+               color = "tan1") 
+```
+:::
+
+::: {.fragment .r-stretch}
+```{r}
+#| label: hist6_2
+#| echo: false
+#| warning: false
+#| message: false
+
+plot_skeleton +
+  geom_segment(aes(x = 1, xend = 5.5, y = mean_A, yend = mean_A), 
+               color = "tan1") +
+  geom_segment(aes(x = 5.5, xend = 10, y = mean_B, yend = mean_B), 
+               color = "tan1") +  
+  stat_smooth(data = df, aes(x = t, y = y), geom = "line",
+              formula = y ~ x, method = "lm", se = FALSE, 
+              linetype = "longdash", size = 1, alpha = 0.6, 
+              color = "yellow4")
+```
+:::
+
+::: {.fragment .r-stretch}
+```{r}
+#| label: hist6_3
+#| echo: false
+#| warning: false
+#| message: false
+
+plot_skeleton +
+  geom_segment(aes(x = 1, xend = 5.5, y = mean_A, yend = mean_A), 
+               color = "tan1") +
+  geom_segment(aes(x = 5.5, xend = 10, y = mean_B, yend = mean_B), 
+               color = "tan1") +  
+  stat_smooth(data = df, aes(x = t, y = y), geom = "line",
+              formula = y ~ x, method = "lm", se = FALSE, 
+              linetype = "longdash", size = 1, alpha = 0.6, 
+              color = "yellow4") +
+  stat_smooth(data = df_A, aes(x = t, y = y), geom = "line", 
+              formula = y ~ x, method = "lm", se = FALSE,
+              alpha = 0.7, size = 1, color = "yellow3") +
+  stat_smooth(data = df_B, aes(x = t, y = y), geom = "line",
+              formula = y ~ x, method = "lm", se = FALSE,
+              alpha = 0.7, size = 1, color = "yellow3")
+```
+:::
+:::
+
+## Istoria modelului în cod (7)
+
+Cum am obținut graficul?
+
+```{r}
+#| label: hist7
+#| eval: false
+#| code-line-numbers: "3-6|7-10|11-16"
+
+# Plot all together
+plot_skeleton +
+  geom_segment(aes(x = 1, xend = 5.5, y = mean_A, yend = mean_A), 
+               color = "tan1") +
+  geom_segment(aes(x = 5.5, xend = 10, y = mean_B, yend = mean_B), 
+               color = "tan1") +  
+  stat_smooth(data = df, aes(x = t, y = y), geom = "line",
+              formula = y ~ x, method = "lm", se = FALSE, 
+              linetype = "longdash", size = 1, alpha = 0.6, 
+              color = "yellow4") +
+  stat_smooth(data = df_A, aes(x = t, y = y), geom = "line", 
+              formula = y ~ x, method = "lm", se = FALSE,
+              alpha = 0.7, size = 1, color = "yellow3") +
+  stat_smooth(data = df_B, aes(x = t, y = y), geom = "line",
+              formula = y ~ x, method = "lm", se = FALSE,
+              alpha = 0.7, size = 1, color = "yellow3")
+```
+
+## Modelul ANOVA
+
+```{r}
+#| label: anova
+#| echo: false
+#| warning: false
+#| message: false
+
+# Plot ANOVA
+plot_anova <- 
+  ggplot() +
+  geom_point(data = df, aes(x = t, y = y)) +
+  geom_line(data = df_A, aes(x = t, y = y)) +
+  geom_line(data = df_B, aes(x = t, y = y)) +
+  geom_rect(aes(xmin = 5.4, xmax = 5.6, ymin = 1, ymax = 10), 
+            fill = "black", alpha = 0.2) +
+  ggbrace::geom_brace(aes(
+    label = "",
+    x = c(5.2, 5.6), 
+    y = c(mean_A, mean_B)), 
+    rotate = 270, labelrotate = 0, labeldistance = 0.1, labelsize = 3, color = "red") +
+  annotate(geom = "text", x = 4.8, y = mean(c(mean_A, mean_B)),
+           label = latex2exp::TeX(r"($\beta_{1} D$)"), parse = TRUE, color = "red") +
+  geom_segment(aes(x = 1, xend = 5.5, y = mean_A, yend = mean_A), color = "tan1") +
+  geom_segment(aes(x = 5.5, xend = 10, y = mean_B, yend = mean_B), color = "tan1") +
+  scale_x_continuous(breaks = 1:10, limits = c(1, 10)) +
+  scale_y_continuous(breaks = 1:10, limits = c(1, 10)) +
+  coord_equal()
+ 
+suppressWarnings(print(plot_anova))
+
+# plot(latex2exp::TeX(r"($y = \beta_{0} + \beta_{1} D + \epsilon$)"))  # raw string latex r"(...)", no escape chars needed
+```
+
+$y = \beta_{0} + \beta_{1} D + \epsilon$
+
+## Modelul ANOVA
+
+-   diferență în medii (nivel) = $\beta_{1}$
+
+## Modelul cu o Pantă Globală
+
+```{r}
+#| label: oneslope
+#| echo: false
+#| warning: false
+#| message: false
+
+# Plot Global Slope Model
+plot_oneslope <- 
+  ggplot() +
+  geom_point(data = df, aes(x = t, y = y)) +
+  geom_rect(aes(xmin = 5.4, xmax = 5.6, ymin = 1, ymax = 10), 
+            fill = "black", alpha = 0.2) +
+  stat_smooth(data = df, aes(x = t, y = y), geom = "line",
+              formula = y ~ x, method = "lm", se = FALSE, 
+              linetype = "longdash", size = 1, alpha = 0.6, color = "yellow4") +
+  annotate(geom = "text", x = 10, y = (intercept_B + slope_B*10 + 0.6),
+           label = latex2exp::TeX(r"($\beta_{2} t$)"), parse = TRUE, color = "yellow4") +
+  stat_smooth(data = df_A, aes(x = t, y = y), geom = "line", 
+              formula = y ~ x, method = "lm", se = FALSE,
+              alpha = 0.7, size = 1, color = "yellow3") +
+  stat_smooth(data = df_A, aes(x = t, y = y), geom = "line", 
+              formula = y ~ x, method = "lm", se = FALSE,
+              alpha = 0.7, size = 1, color = "yellow3", fullrange = TRUE, linetype = "dashed") +
+  stat_smooth(data = df_B, aes(x = t, y = y), geom = "line",
+              formula = y ~ x, method = "lm", se = FALSE,
+              alpha = 0.7, size = 1, color = "yellow3") +
+  stat_smooth(data = df_B, aes(x = t, y = y), geom = "line",
+              formula = y ~ x, method = "lm", se = FALSE,
+              alpha = 0.7, size = 1, color = "yellow3", fullrange = TRUE, linetype = "dashed") +
+  ggbrace::geom_brace(aes(
+    label = "",
+    x = c(5.2, 5.6), 
+    y = c((intercept_A + slope_A*5.5), (intercept_B + slope_B*5.5))), 
+    rotate = 270, labelrotate = 0, labeldistance = 0.1, labelsize = 3, color = "red") +
+  annotate(geom = "text", x = 4.8, y = mean(c(mean_A, mean_B)),
+           label = latex2exp::TeX(r"($\beta_{1} D$)"), parse = TRUE, color = "red") +
+  scale_x_continuous(breaks = 1:10, limits = c(1, 10)) +
+  scale_y_continuous(breaks = 1:10, limits = c(1, 10)) +
+  coord_equal()
+
+suppressWarnings(print(plot_oneslope))
+
+# plot(latex2exp::TeX(r"($y = \beta_{0} + \beta_{1} D + \beta_{2} t + \epsilon$)"))
+```
+
+$y = \beta_{0} + \beta_{1} D + \beta_{2} t + \epsilon$
+
+## Modelul cu o Pantă Globală
+
+-   [@gorsuch1983]
+-   diferență în medii (nivel) = $\beta_{1}$, dar doar dacă nu există trend (adică $\beta_{2}$ = 0)\
+-   ia în calcul trendul, dar presupune trend identic între faze
+
+## Modelul de Regresie Segmentată
+
+```{r}
+#| label: pwr
+#| echo: false
+#| warning: false
+#| message: false
+
+# Plot Piecewise Regression
+plot_pwr1 <-
+  ggplot() +
+  geom_point(data = df, aes(x = t, y = y)) +
+  geom_rect(aes(xmin = 5.4, xmax = 5.6, ymin = 1, ymax = 10), 
+            fill = "black", alpha = 0.2) +
+  geom_line(data = df_A, aes(x = t, y = y)) +
+  geom_line(data = df_B, aes(x = t, y = y)) +
+  stat_smooth(data = df_A, aes(x = t, y = y), geom = "line", 
+              formula = y ~ x, method = "lm", se = FALSE,
+              alpha = 0.7, size = 1, color = "yellow3") +
+  stat_smooth(data = df_A, aes(x = t, y = y), geom = "line", 
+              formula = y ~ x, method = "lm", se = FALSE,
+              alpha = 0.7, size = 1, color = "yellow3", fullrange = TRUE, linetype = "dashed") +
+  annotate(geom = "text", x = 3, y = (intercept_A + slope_A*3 - 0.3),
+           label = latex2exp::TeX(r"($\beta_{2} t$)"), parse = TRUE, color = "yellow3") +
+  stat_smooth(data = df_B, aes(x = t, y = y), geom = "line",
+              formula = y ~ x, method = "lm", se = FALSE,
+              alpha = 0.7, size = 1, color = "yellow3") +
+  stat_smooth(data = df_B, aes(x = t, y = y), geom = "line",
+              formula = y ~ x, method = "lm", se = FALSE,
+              alpha = 0.7, size = 1, color = "yellow3", fullrange = TRUE, linetype = "dashed") +
+  ggbrace::geom_brace(aes(
+    label = "",
+    x = c(5.2, 5.6), 
+    y = c((intercept_A + slope_A*5.5), (intercept_B + slope_B*5.5))), 
+    rotate = 270, labelrotate = 0, labeldistance = 0.1, labelsize = 3, color = "red") +
+  annotate(geom = "text", x = 4.8, y = mean(c(mean_A, mean_B)),
+           label = latex2exp::TeX(r"($\beta_{1} D$)"), parse = TRUE, color = "red") +
+  geom_curve(aes(x = 8.3, xend = 8.3, y = (intercept_A + slope_A*8.3),  yend = (intercept_B + slope_B*8.3)),
+             color = "red") +
+  annotate(geom = "text", x = 9.7, y = mean(c((intercept_A + slope_A*8.3), (intercept_B + slope_B*8.3))),
+           label = latex2exp::TeX(r"($\beta_{3} D(t-k)$)"), parse = TRUE, color = "red") +
+  scale_x_continuous(breaks = 1:10, limits = c(1, 10)) +
+  scale_y_continuous(breaks = 1:10, limits = c(1, 10)) +
+  coord_equal()
+
+# suppressWarnings(print(plot_pwr1))
+
+plot_pwr2 <-
+  ggplot() +
+  geom_point(data = df, aes(x = t, y = y)) +
+  geom_rect(aes(xmin = 5.4, xmax = 5.6, ymin = 1, ymax = 10), 
+            fill = "black", alpha = 0.2) +
+  geom_line(data = df_A, aes(x = t, y = y)) +
+  geom_line(data = df_B, aes(x = t, y = y)) +
+  ggbrace::geom_brace(aes(
+    label = "",
+    x = c(5.2, 5.6), 
+    y = c(mean_A, mean_B)), 
+    rotate = 270, labelrotate = 0, labeldistance = 0.1, labelsize = 3, color = "red") +
+  annotate(geom = "text", x = 4.8, y = mean(c(mean_A, mean_B)),
+           label = latex2exp::TeX(r"($\beta_{1} D$)"), parse = TRUE, color = "red") +
+  geom_segment(aes(x = 1, xend = 5.5, y = mean_A, yend = mean_A), color = "tan1") +
+  annotate(geom = "text", x = 3, y = mean_A - 0.4,
+           label = latex2exp::TeX(r"($\beta_{2} t = 0$)"), parse = TRUE, color = "tan1") +
+  geom_segment(aes(x = 5, xend = 10, y = mean_A, yend = mean_A), color = "tan1", linetype = "dashed") +
+  geom_segment(aes(x = 5.5, xend = 10, y = mean_B, yend = mean_B), color = "tan1") +
+  geom_curve(aes(x = 8, xend = 8, y = mean_A,  yend = mean_B), curvature = 0.3, color = "red") +
+  annotate(geom = "text", x = 9.7, y = mean(c(mean_A, mean_B)),
+           label = latex2exp::TeX(r"($\beta_{3} D(t-k)$)"), parse = TRUE, color = "red") +
+  annotate(geom = "text", x = 9.7, y = mean(c(mean_A, mean_B)) - 0.4,
+           label = latex2exp::TeX(r"($= 0$)"), parse = TRUE, color = "red") +
+  scale_x_continuous(breaks = 1:10, limits = c(1, 10)) +
+  scale_y_continuous(breaks = 1:10, limits = c(1, 10)) +
+  coord_equal()
+
+# suppressWarnings(print(plot_pwr2))
+
+suppressWarnings(print(cowplot::plot_grid(plot_pwr1, plot_pwr2)))
+
+# plot(latex2exp::TeX(r"($y = \beta_{0} + \beta_{1} D + \beta_{2} t + \beta_{3} D(t-k) + \epsilon$)"))
+```
+
+$y = \beta_{0} + \beta_{1} D + \beta_{2} t + \beta_{3} D(t-k) + \epsilon$
+
+## Modelul de Regresie Segmentată
+
+-   [@center1985]
+-   diferență în medii (nivel) = $\beta_{1}D$
+-   trend baseline = $\beta_{2}t$
+-   termen de interacțiune ce cuantifică diferența în pantă între cele două faze = $beta_{3} D(t-k)$
+-   unde k = nr observații în faza A (baseline)
+
+## Interpretare {.scrollable}
+
+![](img/manolov.png){width="90%" height="90%"}
+
+::: r-fit-text
+$$
+y = 
+  \color{blue} { \beta_{0} } + 
+  \color{green} {\beta_{1} D } +
+  \color{blue} { \beta_{2} t } + 
+  \color{lime} { \beta_{3} D(t-k) } + 
+\epsilon
+$$ 
+
+
+$\color{blue} { \beta_{0} }$ este interceptul (scorul evaluat la $t = 0$ și $D = 0$), deci indică valoarea de început a liniei de regresie în faza A.
+
+$\color{green} {\beta_{1} }$ poate fi interpretat ca schimbarea nivelului dintre faza A și faza B necounfounduit cu posibilele efecte de trend, mai precis, este diferența dintre scorurile prezise ale ambelor linii de regresie la prima măsurătoare a fazei B.
+
+$\color{blue} { \beta_{2} }$ captează trendul din faza A.
+
+$\color{lime} { \beta_{3} }$, care este de obicei parametrul cel mai de interes, reprezintă modificarea în trend de la faza A la faza B.
+:::
+
+## Datele SCED {.smaller}
+
+::: columns
+::: {.column width="60%"}
+Datele provin din celebrul studiu realizat de [@singh2007], digitalizate de Rumen Manolov.
+
+**Variabile**:
+
+|                |                                                                                  |
+|----------------|----------------------------------------------------------------------------------|
+| tier           | Id numeric participant                                                           |
+| id             | Nume participant                                                                 |
+| time           | Index al momentului măsurătorii ($t_{0}$ = 1).                                        |
+| phase          | Variabilă dummy: 0 tratamentul nu a început (baseline), 1 tratamentul a început. |
+| score_physical | Scorul participantului la agresivitate fizică.                                   |
+| score_verbal   | Scorul participantului la agresivitate verbală.                                  |
+
+:::
+
+::: {.column width="40%"}
+<br>
+Download
+<br>
+[Repozitoriu OSF](https://osf.io/t6ws6) <br> Datele participantului "Michael" utilizate în această prezentare se găsesc și în Github-ul prezentării.
+:::
+:::
+
+## Preambul în cod {.scrollable}
+
+```{r}
+#| label: sced_intro1
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+#| warning: false
+#| message: false
+#| output: false
+
+# Packages and settings
+packs <- c("ggplot2", "papaja", "scda", "scan")
+success <- suppressWarnings(sapply(packs, require, character.only = TRUE))
+install.packages(names(success)[!success])
+sapply(names(success)[!success], require, character.only = TRUE)
+
+theme_set(papaja::theme_apa())  # set APA style theme for plots
+
+# Get data
+# Michael's data from `scda` package (can be downloaded from presentation Gihub)
+data <- scda::Singh
+data_Michael <- subset(data, id == "Michael")
+
+# Plot
+plot <- 
+  ggplot() +
+    geom_point(data = data_Michael, aes(x = time, y = score_physical)) +
+    geom_rect(aes(xmin = 4.4, xmax = 4.6, ymin = 0, ymax = 3), 
+              fill = "black", alpha = 0.2) +
+    geom_line(data = data_Michael[data_Michael$phase == 0, ], aes(x = time, y = score_physical)) +
+    geom_line(data = data_Michael[data_Michael$phase == 1, ], aes(x = time, y = score_physical)) +
+    scale_x_continuous(breaks = 1:18, limits = c(1, 18)) +
+    scale_y_continuous(breaks = 0:3, limits = c(0, 3)) +
+    xlab("Timp") +
+    ylab("Scor fizic") +
+    coord_equal()
+```
+
+Investigați codul:
+
+::: incremental
+-   Pachete & Setări
+-   Datele provin dintr-un pachet
+-   Se generează un grafic
+:::
+
+## Vizualizarea datelor
+
+Ce observați?
+
+```{r}
+#| label: sced_intro2
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+#| warning: false
+#| message: false
+
+plot
+```
+
+## Analize cu pachetul `scda`
+
+```{r}
+#| label: scda1
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+#| warning: false
+#| message: false
+
+# Package scda -----------------------------------------------------------
+# Piecewise regression
+pwr_scda <- scda::piecewiseRegr(data = data_Michael,
+                           timeVar = "time",
+                           yVar = "score_physical",
+                           phaseVar = "phase",
+                           robust = FALSE,
+                           outputWidth = 1.2,
+                           outputHeight = 1.2,
+                           yRange = c(0,7),
+                           showPlot = FALSE)
+```
+
+## Grafic cu pachetul `scda`
+
+```{r}
+#| label: scda2
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+#| warning: false
+#| message: false
+
+pwr_scda$output$plot
+```
+
+## Rezultate cu pachetul `scda`
+
+```{r}
+#| label: scda3
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+#| warning: false
+#| message: false
+
+pwr_scda
+```
+
+## Mărime a efectului cu pachetul `scda`
+
+$delta_{t}$ a lui [@swaminathan2014] compară scorurile prezise la un anumit punct de măsurare (t) din faza B cu predicția din faza A extrapolată la t.
+
+```{r}
+#| label: scda4
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+#| warning: false
+#| message: false
+
+# Effect size
+# Swaminathan et al. (2014) compares the predicted scores from the PWR model at a given measurement point (t) in phase B with the prediction from the A phase extrapolated to t.
+pwr_scda$output$delta_t 
+```
+
+## Regresie segmentată generalizată cu pachetul `scda`
+
+Extindere a modelului utilizată în designuri mai complexe (ex. ABA cu retragere, ABAB cu inversiune).
+
+```{r}
+#| label: scda5
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+#| warning: false
+#| message: false
+#| output: false
+
+# Generalized PWR 
+pwrgen_scda <- scda::genPwr(data = data_Michael,
+                           timeVar = "time",
+                           yVar = "score_physical",
+                           phaseVar = "phase")
+
+pwrgen_scda
+pwrgen_scda$output$plot
+```
+
+## Analize cu pachetul `scan`
+
+```{r}
+#| label: scan1
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+#| warning: false
+#| message: false
+
+# Package scan -----------------------------------------------------------
+# Transform into scdf list format
+# data_scdf <- as.list(split(data, f = as.factor(data$id)))
+data_Michael_scdf <- scan::scdf(
+  values = data_Michael$score_physical, 
+  covariate = data_Michael$score_verbal,
+  mt = data_Michael$time,
+  phase = LETTERS[data_Michael$phase + 1],        # data_Michael$phase
+  name = "Michael"
+)
+
+# Piecewise regression
+# "B&L-B" starts the dummy var at 1, "H-M" starts at 0 which is also used by scda::piecewiseRegr
+pwr_scan <- scan::plm(data = data_Michael_scdf, 
+                      dvar = "values", pvar = "phase", mvar = "mt", 
+                      model = "H-M",                                    
+                      AR = 0, family = "gaussian",
+                      trend = TRUE, level = TRUE, slope = TRUE, r_squared = TRUE)
+```
+
+## Grafic cu pachetul `scan`
+
+```{r}
+#| label: scan2
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+#| warning: false
+#| message: false
+
+plot(data_Michael_scdf)
+```
+
+## Rezultate cu pachetul `scan`
+
+```{r}
+#| label: scan3
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+#| warning: false
+#| message: false
+
+pwr_scan
+```
+
+## Autocorelație și covariate cu pachetul `scan`
+
+```{r}
+#| label: scan4
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+#| warning: false
+#| message: false
+
+# Autocorrelation
+pwr_scan_autocor <- scan::autocorr(data = data_Michael_scdf, 
+  dvar = "values", pvar = "phase", mvar = "mt", lag_max = 3)
+
+# Multivariate piecewise regression
+mvpwr_scan <- scan::mplm(data = data_Michael_scdf, 
+  dvar = c("values", "covariate"), pvar = "phase", mvar = "mt", 
+  model = "H-M", trend = TRUE, level = TRUE, slope = TRUE)
+
+mvpwr_scan
+```
+
+## Reproducem fără pachete {.scrollable .smaller}
+
+Totul în base R.
+
+```{r}
+#| label: sced_baser1
+#| code-fold: true
+#| code-summary: click pentru a vedea codul
+#| warning: false
+#| message: false
+#| output: false
+
+# Do it in base R
+k_time <- 5   # (t-k_time) starts with 0 in B phase => k is number of first time of B phase
+pwr <- lm(score_physical ~ 1 + phase + time + I(phase * (time - k_time) * (time >= k_time)), data = data_Michael)
+# here phase and (time >= k_time) are both 0 in A and 1 in B ... don't need both dummy vars
+summary(pwr)$coefficients  # same results as scan
+
+pred_pwr <- predict(pwr, se.fit = TRUE, data = data_Michael)
+
+plot_base <- 
+  ggplot(data = data_Michael, aes(x = time, y = score_physical)) +
+    geom_point(alpha = 0.55, color = "black") + 
+    geom_line(aes(y = pred_pwr$fit), size = 1, color = "red") +
+    geom_ribbon(aes(ymax = pred_pwr$fit + pred_pwr$se.fit, ymin = pred_pwr$fit - pred_pwr$se.fit), fill = "red", alpha = .1)  
+
+# scda centers t so that it begins with 0 in both phases => difference in intercept between scda and scan/base solutions
+# to get same result for intercept as scda:
+data_Michael2 <- data_Michael
+data_Michael2$time <- data_Michael2$time - 1
+k_time <- 4
+pwr_likescda <- lm(score_physical ~ 1 + phase + time + I(phase * (time - k_time) * (time >= k_time)), data = data_Michael2)
+summary(pwr_likescda)$coefficients  # same as scda
+```
+
+```{r}
+#| label: sced_baser2
+#| echo: false
+#| warning: false
+#| message: false
+
+plot_base
+```
+
+## Reproducem fără pachete {.scrollable .smaller}
+
+Observăm o diferență în estimare interceptului între `scda` și `scan` datorată centrării timpului. Puteți citi mai multe despre recomandări de codificare a timpului în SCED în [@huitema2000] (mai ales schem standard H-M ce poartă numele autorilor).
+
+În base R putem reproduce ambele rezultate.
+
+::: columns
+::: {.column width="50%"}
+La fel ca `scda`
+
+```{r}
+#| label: sced_baser3
+#| echo: false
+#| warning: false
+#| message: false
+
+summary(pwr_likescda)$coefficients  # same as scda
+```
+:::
+
+::: {.column width="50%"}
+La fel ca `scan`
+
+```{r}
+#| label: sced_baser4
+#| echo: false
+#| warning: false
+#| message: false
+
+summary(pwr)$coefficients  # same results as scan
+```
+:::
+:::
+
+## Analize în GUI
+
+<https://manolov.shinyapps.io/Regression/>
+
+![](img/gui_manolov.png)
+
+## Bibliografie
+
+::: {#refs}
+:::

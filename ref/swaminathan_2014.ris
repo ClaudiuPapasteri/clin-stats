@@ -1,0 +1,30 @@
+Provider: American Psychological Association
+Database: PsycINFO
+Content: application/x-research-info-systems
+
+TY  - JOUR
+PMID  - 24606976
+ID  - 2014-09385-004
+T1  - An effect size measure and Bayesian analysis of single-case designs.
+JF  - Journal of School Psychology
+A1  - Swaminathan, Hariharan
+A1  - Rogers, H. Jane
+A1  - Horner, Robert H.
+VL  - 52
+SP  - 213
+EP  - 230
+Y1  - 2014
+CY  - Netherlands
+AD  - Swaminathan, Hariharan: Department of Educational Psychology, University of Connecticut, U-3064, 249 Glenbrook Rd, Storrs, CT, US, 06269, swami@uconn.edu
+PB  - Elsevier Science
+SN  - 1873-3506(Electronic),0022-4405(Print)
+N2  - This article describes a linear modeling approach for the analysis of single-case designs (SCDs). Effect size measures in SCDs have been defined and studied for the situation where there is a level change without a time trend. However, when there are level and trend changes, effect size measures are either defined in terms of changes in R² or defined separately for changes in slopes and intercept coefficients. We propose an alternate effect size measure that takes into account changes in slopes and intercepts in the presence of serial dependence and provides an integrated procedure for the analysis of SCDs through estimation and inference based directly on the effect size measure. A Bayesian procedure is described to analyze the data and draw inferences in SCDs. A multilevel model that is appropriate when several subjects are available is integrated into the Bayesian procedure to provide a standardized effect size measure comparable to effect size measures in a between-subjects design. The applicability of the Bayesian approach for the analysis of SCDs is demonstrated through an example. (PsycINFO Database Record (c) 2019 APA, all rights reserved)
+KW  - *Statistical Probability
+KW  - *Bayesian Analysis
+KW  - Data Collection
+KW  - Experimental Design
+KW  - Inference
+KW  - Size
+M3  - doi:10.1016/j.jsp.2013.12.002
+DO  - 10.1016/j.jsp.2013.12.002
+ER  -

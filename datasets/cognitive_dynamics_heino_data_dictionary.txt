@@ -1,0 +1,103 @@
+General note: The session (i.e. logging data, doing the Stroop tasks, meditating etc.) proceeded in approximately the variable order. As an exception, variable 34 (possibly compromised data quality) was logged directly after the post-meditation Stroop task.
+
+1. rowNumber
+Row number.
+
+2. date
+Date, on which the participant the participant last woke up. In dd.mm.yyyy format. Note: date is always the day the participant woke up to, even if it is already past midnight.
+
+3. time_of_day
+Actual time of day. hh:mm, in 24-hour clock where midnight is 00:00 and 11pm is 23:00.
+
+4. headspace_package
+Package within the headspace program, i.e. the monthly theme of the guided meditations. 0 indicates "free meditation", i.e. without listening to the guided content. 99 and 992 are "control" sessions: trying to fall asleep by feeling each part of one's body with an intent of "switching it off" (duration is same as guided meditations).
+
+5. day_within_headspace_package
+Running number of the guided meditation within the current theme.
+
+6. clarity_pre_meditation
+Answer, on a scale of 1-10 in intervals of 0.25, to the question "How clear do you feel right now".
+
+7. calm_pre_meditation
+Answer, on a scale of 1-10 in intervals of 0.25, to the question "How calm do you feel right now".
+
+8. tiredness_pre_meditation
+Answer, on a scale of 1-10 in intervals of 0.25, to the question "How tired do you feel right now".
+
+9. hours_awake_today
+Number of hours since the participant woke up. Upon awakening, the participant logged in the time of day, and upon the session calculated this variable from the logged time.
+
+10. hours_slept_last_night
+Subjective estimate of hours slept on the previous night.  
+
+11. hours_since_meal
+Number of hours since last meal.
+
+12. meditation_minutes_earlier_today
+Number of extra minutes meditated before this session, since waking up.
+
+13. mood_bad_proportion_since_last_entry
+Mood was measured as a proportion of time spent in four categories, since the last measurement (Kahneman's day reconstruction method; see supplementary material of 10.1126/science.1103572). Categories were "in a bad mood", "a little low or irritable", "in a mildly pleasant mood", "in a very good mood", and they always sum up to 1. "Previous entry" refers to either the time of the previous measurement point, or the last 24 hours, if the previous day was missed.
+
+14. mood_low_proportion_since_last_entry
+Mood was measured as a proportion of time spent in four categories, since the last measurement (Kahneman's day reconstruction method; see supplementary material of 10.1126/science.1103572). Categories were "in a bad mood", "a little low or irritable", "in a mildly pleasant mood", "in a very good mood", and they always sum up to 1. "Previous entry" refers to either the time of the previous measurement point, or the last 24 hours, if the previous day was missed.
+
+15. mood_mildlypleasant_proportion_since_last_entry
+Mood was measured as a proportion of time spent in four categories, since the last measurement (Kahneman's day reconstruction method; see supplementary material of 10.1126/science.1103572). Categories were "in a bad mood", "a little low or irritable", "in a mildly pleasant mood", "in a very good mood", and they always sum up to 1. "Previous entry" refers to either the time of the previous measurement point, or the last 24 hours, if the previous day was missed.
+
+16. mood_verygood_proportion_since_last_entry
+Mood was measured as a proportion of time spent in four categories, since the last measurement (Kahneman's day reconstruction method; see supplementary material of 10.1126/science.1103572). Categories were "in a bad mood", "a little low or irritable", "in a mildly pleasant mood", "in a very good mood", and they always sum up to 1. "Previous entry" refers to either the time of the previous measurement point, or the last 24 hours, if the previous day was missed.
+
+17. stroop_congruent_pre_meditation
+Stroop test consisted of 5 congruent (e.g. the word "blue" in blue letters) and 15 incongruent trials. This is the average response time (in units of 1/100 seconds) to the congruent trials before doing the meditation.
+
+18. stroop_incongruent_pre_meditation
+Stroop test consisted of 5 congruent and 15 incongruent (e.g. the word "yellow" in red letters) trials. This is the average response time (in units of 1/100 seconds) to the incongruent trials before doing the meditation.
+
+19. stroop_mistake_pre_meditation
+Was there one or more errors in answering the Stroop task pre-meditation? "none" for no errors, "almost" for almost making an error, "at least one" for one or more errors.
+
+20. meditation_randomised_walking
+Meditation was randomised to be performed as walking meditation. 1 for yes, 0 for no.
+
+21. meditation_randomised_sitting
+Meditation was randomised to be performed as sitting meditation. 1 for yes, 0 for no.
+
+22. meditation_randomised_standing
+Meditation was randomised to be performed as standing meditation. 1 for yes, 0 for no.
+
+23. stroop_congruent_post_meditation
+Stroop test consisted of 5 congruent (e.g. the word "blue" in blue letters) and 15 incongruent trials. This is the average response time to the congruent trials after doing the meditation.
+
+24. stroop_incongruent_post_meditation
+Stroop test consisted of 5 congruent and 15 incongruent (e.g. the word "yellow" in red letters) trials. This is the average response time to the incongruent trials after doing the meditation.
+
+25. stroop_mistake_post_meditation
+Was there one or more errors in answering the Stroop task post-meditation? "none" for no errors, "almost" for almost making an error, "at least one" for one or more errors.
+
+26. clarity_post_meditation
+Answer, on a scale of 1-10 in intervals of 0.25, to the question "How clear do you feel right now".
+
+27. calm_post_meditation
+Answer, on a scale of 1-10 in intervals of 0.25, to the question "How calm do you feel right now".
+
+28. tiredness_post_meditation
+Answer, on a scale of 1-10 in intervals of 0.25, to the question "How tired do you feel right now".
+
+29. self_regulation_failure_severity
+Relates to a (confidential) habit the participant was aiming to abstain from; i.e. whether they had failed in abstinence on the current day. The variable is zero with successful abstinence since the previous entry, 1-2 are benign cases, 3 is a mild failure and 4 a complete failure. Abstinence attempts were kept relatively constant during the data collection period. 
+
+30. hrs_since_coffee
+Number of hours since last coffee.
+
+31. out_of_home
+Indicates, whether the session was not done on a home computer, i.e. mostly at work, in which case gets a value of 1. When at home, 0.
+
+32. hangover
+Zero when participant experiences no hangover, 1 when there is hangover, and 0.5 when there's a slight hangover. 
+
+33. re_anchor
+At the beginning of the data collection, clarity/calm/tiredness assessments did not have a named midpoint. When "re-anchor" is 1, an anchor of 5 was introduced (not calm nor agitated / not clear nor unclear / not sleepy nor alert). Zero before this change was made.
+
+34. data_point_quality_compromised
+When 1, indicates there was something non-routine interfering with the session, possibly compromising the quality of this data point. Zero under ideal conditions.
