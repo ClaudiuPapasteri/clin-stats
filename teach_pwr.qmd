@@ -1,7 +1,7 @@
 ---
 title: "Regresia segmentată și cauzalitatea"
 author: "Claudiu Papasteri"
-subtitle: "De la observație la inferenă cauzală" 
+subtitle: "De la observație la inferență cauzală" 
 editor: source
 execute:
   eval: true
@@ -183,7 +183,7 @@ suppressWarnings(print(plot_lin))
 
 ## Un pattern fără context (4) {.scrollable .smaller}
 
-Este patternul mai bine descris de o relație curbilinie (polinomială)? Care dintre trenduri, pătratic ([roșu]{style="color:red;"}) sau cubic ([albastru]{style="color:blue;"}) se potrivește mai bine datelor?
+Este pattern-ul mai bine descris de o relație curbilinie (polinomială)? Care dintre trenduri, pătratic ([roșu]{style="color:red;"}) sau cubic ([albastru]{style="color:blue;"}) se potrivește mai bine datelor?
 
 ```{r}
 #| label: pattern4
@@ -220,7 +220,7 @@ suppressWarnings(print(plot_poly))
 **Reinventăm regresia segmentată!**
 
 ::: incremental
-1.  Împățim datele în grupe de vârstă (segmentăm variabila $x$).
+1.  Împărțim datele în grupe de vârstă (segmentăm variabila $x$).
 
 2.  Potrivim regresii liniare pe fiecare set de date rezultat.
 :::
@@ -316,7 +316,7 @@ suppressWarnings(print(plot_pwr))
 
 ## Un pattern fără context (9) {.smaller}
 
-[De fapt, ceea ce este denumit în litarură Regresie Segmentată nu este Regresie Segmentată, ci Regresie cu Spline-uri Liniare.]{style="color:red;"}
+[De fapt, ceea ce este denumit în literatură Regresie Segmentată nu este Regresie Segmentată, ci Regresie cu Spline-uri Liniare.]{style="color:red;"}
 
 Spline-urile permit o interpolare netedă și continuă între punctele de întrerupere (noduri). Între noduri este calculată o regresie (*polinomială*).
 
@@ -335,7 +335,7 @@ suppressWarnings(print(plot_pwr))
 **Re-reinventăm regresia segmentată!**
 
 ::: incremental
-1.  Împățim datele în grupe de vârstă (segmentăm variabila $x$) =\> $k$ noduri.
+1.  Împărțim datele în grupe de vârstă (segmentăm variabila $x$) =\> $k$ noduri.
 
 2.  Folosim o funcție treaptă încât să obținem o singură ecuație de regresie care păstrează doar un intercept $\beta_{0}$ și câte o pantă pentru fiecare set de date rezultat.
 :::
@@ -394,9 +394,9 @@ suppressWarnings(print(plot_linsp))
 
 ## Un pattern fără context (12) {.scrollable .smaller}
 
-**Bonus**: Mai sus scria că regresiile între noduri sunt *polinomiale*, iar polinomul, poate desigur să nu fie de ordinul I.
+**Bonus**: Mai sus scria că regresiile între noduri sunt *polinomiale*, iar polinomul poate, desigur, să nu fie de ordinul 1.
 
-Optimizânt numărul $k$ de noduri și ordinul polinomului obținem o metodă foarte robustă, deși nesofisticată, de învățare a pattern-urilor din date. Un exemplu de Regresie cu Spline-uri Polinomiale de ordin II:
+Optimizând numărul $k$ de noduri și ordinul polinomului obținem o metodă foarte robustă, deși nesofisticată, de învățare a pattern-urilor din date. Un exemplu de Regresie cu Spline-uri Polinomiale de ordin 2:
 
 ```{r}
 #| label: pattern12
@@ -430,24 +430,24 @@ suppressWarnings(print(plot_quadsp))
 ::: r-fit-text
 Măsurăm constructe:
 
--   **TSF** =grosimea pliului cutanat al tricepsului, o măsurătoare economică și convenabilă pentru a evalua obezitatea.
+-   **TSF** = grosimea pliului cutanat al tricepsului, o metrică economică și convenabilă pentru evaluarea obezității.
 
-    -   Validitate: avantaj față de alți indici are avantajul de a reprezenta distribuţia grăsimii.
+    -   Validitate: față de alți indici are avantajul de a reprezenta distribuţia grăsimii.
 
-    -   Utilitate predictivă: la fiecare creștere cu 1 mm a grosimii TSF, riscul de deces scade cu 4%, riscul de deces din cauze cardiovasculare cu 6% [@li2022].
+    -   Utilitate predictivă: la fiecare creștere cu 1 mm a TSF, riscul de deces scade cu 4%, riscul de deces din cauze cardiovasculare cu 6% [@li2022].
 
-**Vârsta** codează timpul în unități discrete dacă am presupune că indivizii sunt interșanjabili. Totuși multe variabile se asociază cu TSF (ex. genul, nutriția etc), iar imaginea transversală nu spune povestea filmului longitudinal.
+**Vârsta** codează timpul în unități discrete dacă am presupune că indivizii sunt interșanjabili. Totuși, multe variabile se asociază cu TSF (ex. genul, nutriția etc), iar imaginea transversală nu spune povestea filmului longitudinal.
 :::
 
 ## Date longitudinale în Psihologie
 
-Deoarece cea mai mare parte a psihologiei implică așa-numite procese non-ergodice, cercetarea pe eșantion mari nu poate oferi informații fiabile despre procesele la nivel individual. [@hamaker2012].
+Deoarece cea mai mare parte a psihologiei implică așa-numitele procese non-ergodice, cercetarea pe eșantione mari nu poate oferi informații fidele despre procese la nivel individual. [@hamaker2012].
 
--   O descriere simplificata a non-ergotismului: individul, în timp, nu obține rezultatul mediu al grupului.
+-   O descriere simplificată a non-ergotismului: individul, în timp, nu obține rezultatul mediu al grupului.
 
-Monitorizare în timp real al sistemelor idiografice
+Monitorizare în timp real a sistemelor idiografice
 
--   Pentru o discuție a utilizării conceptului și complianței cu metodologia în contex psihoterapeutic vedeți [@schiepek2016].
+-   Pentru o discuție a utilizării conceptului și complianței cu metodologia în context psihoterapeutic vedeți [@schiepek2016].
 
 ## Datele longitudinale
 
@@ -581,7 +581,7 @@ suppressWarnings(print(plot_lin))
 
 ## Regresia segmentată {.scrollable .smaller}
 
-De această dată nu o vom mai coda "manual" (folosing doar *base R*), ci vom folosi pachetul `lspline` pentru a obține noduri în urma împățirii datelor în intervale egale de timp.
+De această dată nu o vom mai coda "manual" (folosind doar *base R*), ci vom folosi pachetul `lspline` pentru a obține noduri în urma împărțirii datelor în intervale egale de timp.
 
 ```{r}
 #| label: long4
@@ -666,7 +666,13 @@ suppressWarnings(print(plot_knots))
 
 ## Pe ce bazăm inferența
 
-Inferență bazată pe model <br> V.S. <br> Inferență bazată pe design
+Inferență bazată pe model 
+<br> 
+
+VS. 
+<br> 
+
+Inferență bazată pe design
 
 ## Cauzalitatea ([după Hume](https://plato.stanford.edu/entries/hume/))
 
@@ -687,7 +693,7 @@ Inferență bazată pe model <br> V.S. <br> Inferență bazată pe design
 ::: incremental
 -   cvasi-experimental pre-post
 -   manipularea variabilei independente poate apărea natural în mediu =\> inferență cauzală din date observaționale
--   NU vom discuta despre ea la acest curs, dar puteți [citiți mai multe](https://en.wikipedia.org/wiki/Regression_discontinuity_design)
+-   NU vom discuta despre ea la acest curs, dar puteți [citi mai multe](https://en.wikipedia.org/wiki/Regression_discontinuity_design)
 :::
 
 ## Regresia segmentată și cauzalitatea (2)
@@ -1147,7 +1153,7 @@ $y = \beta_{0} + \beta_{1} D + \beta_{2} t + \beta_{3} D(t-k) + \epsilon$
 -   diferență în medii (nivel) = $\beta_{1}D$
 -   trend baseline = $\beta_{2}t$
 -   termen de interacțiune ce cuantifică diferența în pantă între cele două faze = $beta_{3} D(t-k)$
--   unde k = nr observații în faza A (baseline)
+-   unde k = nr. observații în faza A (baseline)
 
 ## Interpretare {.scrollable}
 
@@ -1324,7 +1330,7 @@ pwr_scda$output$delta_t
 
 ## Regresie segmentată generalizată cu pachetul `scda`
 
-Extindere a modelului utilizată în designuri mai complexe (ex. ABA cu retragere, ABAB cu inversiune).
+Extindere a modelului utilizată în design-uri mai complexe (ex. ABA cu retragere, ABAB cu inversiune).
 
 ```{r}
 #| label: scda5
@@ -1464,7 +1470,7 @@ plot_base
 
 ## Reproducem fără pachete {.scrollable .smaller}
 
-Observăm o diferență în estimare interceptului între `scda` și `scan` datorată centrării timpului. Puteți citi mai multe despre recomandări de codificare a timpului în SCED în [@huitema2000] (mai ales schem standard H-M ce poartă numele autorilor).
+Observăm o diferență în estimarea interceptului între `scda` și `scan` datorată centrării timpului. Puteți citi mai multe despre recomandări de codificare a timpului în SCED în [@huitema2000] (mai ales, schema standard H-M ce poartă numele autorilor).
 
 În base R putem reproduce ambele rezultate.
 
