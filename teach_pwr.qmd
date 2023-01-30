@@ -96,7 +96,7 @@ sau scanând codul
 :::
 
 ::: {.column width="30%"}
-Download: <i class="fas fa-file-pdf"></i> <a href="/res/pwr.pdf" download>Prezentarea pdf</a> <i class="fas fa-github"></i> <a href="https://github.com/ClaudiuPapasteri/clin-stats/" download>Codul din Github</a>
+Download: <i class="fas fa-file-pdf"></i> <a href="clin-stats/res/pwr.pdf" download>Prezentarea pdf</a> <i class="fas fa-github"></i> <a href="https://github.com/ClaudiuPapasteri/clin-stats/" download>Codul din Github</a>
 :::
 :::
 
