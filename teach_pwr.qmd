@@ -1152,7 +1152,7 @@ $y = \beta_{0} + \beta_{1} D + \beta_{2} t + \beta_{3} D(t-k) + \epsilon$
 -   [@center1985]
 -   diferență în medii (nivel) = $\beta_{1}D$
 -   trend baseline = $\beta_{2}t$
--   termen de interacțiune ce cuantifică diferența în pantă între cele două faze = $beta_{3} D(t-k)$
+-   termen de interacțiune ce cuantifică diferența în pantă între cele două faze = $\beta_{3} D(t-k)$
 -   unde k = nr. observații în faza A (baseline)
 
 ## Interpretare {.scrollable}
