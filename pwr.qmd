@@ -88,11 +88,11 @@ theme_set(papaja::theme_apa())
 ::: {.column width="70%"}
 Urmăriți prezentarea pe:
 
-<https://quarto.org/docs/presentations/>
+<https://claudiupapasteri.github.io/clin-stats/pwr.html#/>
 
 sau scanând codul
 
-<br/> {{< qrcode https://claudiupapasteri.github.io/clin-stats/pwr.html#/ width=300 height=300 colorDark='#0011bb' >}}
+{{< qrcode https://claudiupapasteri.github.io/clin-stats/pwr.html#/ width=300 height=300 colorDark='#0011bb' >}}
 :::
 
 ::: {.column width="30%"}
